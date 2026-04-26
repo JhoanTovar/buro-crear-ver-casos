@@ -210,11 +210,57 @@ class LegalRoom(models.Model):
         return self.name
 
 
+# ==================== CASE MODEL ENUMS ====================
+
+class SexoChoices(models.TextChoices):
+    MASCULINO = 'MASCULINO', 'Masculino'
+    FEMENINO = 'FEMENINO', 'Femenino'
+    OTRO = 'OTRO', 'Otro'
+
+
+class PoblacionChoices(models.TextChoices):
+    DESPLAZADO = 'DESPLAZADO', 'Desplazado'
+    VICTIMA = 'VICTIMA', 'Victima del conflicto'
+    MIGRANTE = 'MIGRANTE', 'Migrante'
+    REINSERTADO = 'REINSERTADO', 'Reinsertado'
+    NINGUNA = 'NINGUNA', 'Ninguna'
+    OTRA = 'OTRA', 'Otra'
+
+
+class EtniaChoices(models.TextChoices):
+    INDIGENA = 'INDIGENA', 'Indigena'
+    AFRODESCENDIENTE = 'AFRODESCENDIENTE', 'Afrodescendiente'
+    ROM = 'ROM', 'Rom/Gitano'
+    RAIZAL = 'RAIZAL', 'Raizal'
+    PALENQUERO = 'PALENQUERO', 'Palenquero'
+    NINGUNA = 'NINGUNA', 'Ninguna'
+
+
+class EstratoChoices(models.TextChoices):
+    ESTRATO_1 = '1', 'Estrato 1'
+    ESTRATO_2 = '2', 'Estrato 2'
+    ESTRATO_3 = '3', 'Estrato 3'
+    ESTRATO_4 = '4', 'Estrato 4'
+    ESTRATO_5 = '5', 'Estrato 5'
+    ESTRATO_6 = '6', 'Estrato 6'
+
+
+class DiscapacidadChoices(models.TextChoices):
+    NINGUNA = 'NINGUNA', 'Ninguna'
+    FISICA = 'FISICA', 'Fisica'
+    VISUAL = 'VISUAL', 'Visual'
+    AUDITIVA = 'AUDITIVA', 'Auditiva'
+    COGNITIVA = 'COGNITIVA', 'Cognitiva'
+    PSICOSOCIAL = 'PSICOSOCIAL', 'Psicosocial'
+    MULTIPLE = 'MULTIPLE', 'Multiple'
+
+
 # ==================== CASE MODEL ====================
 
 class Case(models.Model):
     """Caso legal asociado a un beneficiario"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=200, verbose_name="Titulo del Caso", blank=True, null=True)
     beneficiary = models.ForeignKey(
         Beneficiary, 
         on_delete=models.CASCADE, 
@@ -236,6 +282,57 @@ class Case(models.Model):
         blank=True,
         related_name='cases',
         verbose_name="Sala Juridica"
+    )
+    # Datos del titular (si es diferente al beneficiario de la cita)
+    titular_is_beneficiary = models.BooleanField(default=True, verbose_name="El titular es el beneficiario de la cita")
+    titular_cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name="Cedula del Titular")
+    titular_nombre = models.CharField(max_length=200, blank=True, null=True, verbose_name="Nombre del Titular")
+    titular_telefono = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefono del Titular")
+    titular_correo = models.EmailField(blank=True, null=True, verbose_name="Correo del Titular")
+    # Campos demograficos
+    sexo = models.CharField(
+        max_length=20,
+        choices=SexoChoices.choices,
+        blank=True, 
+        null=True,
+        verbose_name="Sexo"
+    )
+    poblacion = models.CharField(
+        max_length=20,
+        choices=PoblacionChoices.choices,
+        blank=True, 
+        null=True,
+        verbose_name="Poblacion"
+    )
+    etnia = models.CharField(
+        max_length=20,
+        choices=EtniaChoices.choices,
+        blank=True, 
+        null=True,
+        verbose_name="Etnia"
+    )
+    estrato = models.CharField(
+        max_length=2,
+        choices=EstratoChoices.choices,
+        blank=True, 
+        null=True,
+        verbose_name="Estrato"
+    )
+    discapacidad = models.CharField(
+        max_length=20,
+        choices=DiscapacidadChoices.choices,
+        blank=True, 
+        null=True,
+        verbose_name="Discapacidad"
+    )
+    # Referencia a la cita de origen
+    appointment_origin = models.ForeignKey(
+        'Appointment',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cases_created',
+        verbose_name="Cita de Origen"
     )
     creation_date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creacion")
     description = models.TextField(verbose_name="Descripcion del Caso")

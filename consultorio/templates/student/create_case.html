@@ -1,0 +1,229 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}Crear Caso - Estudiante{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'student-home' %}" class="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Volver a Agenda
+        </a>
+    </div>
+
+    <div class="bg-white shadow-sm border border-gray-200 p-6 mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900 mb-4">Crear Caso desde Cita</h1>
+        
+        <div class="bg-indigo-50 border border-indigo-100 p-4 mb-6">
+            <h2 class="text-lg font-medium text-indigo-900 mb-3">Informacion de la Cita</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-indigo-600 font-medium">Beneficiario</p>
+                    <p class="text-gray-900">{{ beneficiary.name }}</p>
+                </div>
+                <div>
+                    <p class="text-indigo-600 font-medium">Documento</p>
+                    <p class="text-gray-900">{{ beneficiary.document }}</p>
+                </div>
+                <div>
+                    <p class="text-indigo-600 font-medium">Fecha de Cita</p>
+                    <p class="text-gray-900">{{ appointment.date|date:"d/m/Y" }} a las {{ appointment.date|time:"g:i a" }}</p>
+                </div>
+                <div>
+                    <p class="text-indigo-600 font-medium">Telefono</p>
+                    <p class="text-gray-900">{{ beneficiary.phone }}</p>
+                </div>
+                <div>
+                    <p class="text-indigo-600 font-medium">Correo</p>
+                    <p class="text-gray-900">{{ beneficiary.email }}</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Datos del Caso</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="id_title" class="block text-sm font-medium text-gray-700 mb-1">{{ form.title.label }}</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Titular del Caso</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.titular_is_beneficiary.label }}</label>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            {% for radio in form.titular_is_beneficiary %}
+                            <label class="inline-flex items-center cursor-pointer">
+                                {{ radio.tag }}
+                                <span class="ml-2 text-gray-700">{{ radio.choice_label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% if form.titular_is_beneficiary.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.titular_is_beneficiary.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div id="titular-fields" class="hidden bg-gray-50 border border-gray-200 p-4 space-y-4">
+                        <p class="text-sm text-gray-600 mb-3">Complete los datos del titular del caso:</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="id_titular_cedula" class="block text-sm font-medium text-gray-700 mb-1">{{ form.titular_cedula.label }}</label>
+                                {{ form.titular_cedula }}
+                                {% if form.titular_cedula.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.titular_cedula.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="id_titular_nombre" class="block text-sm font-medium text-gray-700 mb-1">{{ form.titular_nombre.label }}</label>
+                                {{ form.titular_nombre }}
+                                {% if form.titular_nombre.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.titular_nombre.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="id_titular_telefono" class="block text-sm font-medium text-gray-700 mb-1">{{ form.titular_telefono.label }}</label>
+                                {{ form.titular_telefono }}
+                                {% if form.titular_telefono.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.titular_telefono.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="id_titular_correo" class="block text-sm font-medium text-gray-700 mb-1">{{ form.titular_correo.label }}</label>
+                                {{ form.titular_correo }}
+                                {% if form.titular_correo.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.titular_correo.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Datos Demograficos del Titular</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <label for="id_sexo" class="block text-sm font-medium text-gray-700 mb-1">{{ form.sexo.label }}</label>
+                        {{ form.sexo }}
+                        {% if form.sexo.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.sexo.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_poblacion" class="block text-sm font-medium text-gray-700 mb-1">{{ form.poblacion.label }}</label>
+                        {{ form.poblacion }}
+                        {% if form.poblacion.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.poblacion.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_etnia" class="block text-sm font-medium text-gray-700 mb-1">{{ form.etnia.label }}</label>
+                        {{ form.etnia }}
+                        {% if form.etnia.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.etnia.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_estrato" class="block text-sm font-medium text-gray-700 mb-1">{{ form.estrato.label }}</label>
+                        {{ form.estrato }}
+                        {% if form.estrato.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.estrato.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_discapacidad" class="block text-sm font-medium text-gray-700 mb-1">{{ form.discapacidad.label }}</label>
+                        {{ form.discapacidad }}
+                        {% if form.discapacidad.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.discapacidad.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 p-4">
+                <div class="flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <p class="text-sm font-medium text-amber-800">Asignacion automatica</p>
+                        <p class="text-sm text-amber-700">El caso sera asignado automaticamente al estudiante con menos casos activos (diferente a usted).</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="bg-red-50 border border-red-200 p-4">
+                {% for error in form.non_field_errors %}
+                <p class="text-sm text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 font-medium hover:bg-indigo-700 transition-colors">
+                    Crear Caso
+                </button>
+                <a href="{% url 'student-home' %}" class="flex-1 text-center border border-gray-300 text-gray-700 px-6 py-3 font-medium hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const titularRadios = document.querySelectorAll('input[name="titular_is_beneficiary"]');
+        const titularFields = document.getElementById('titular-fields');
+
+        function toggleTitularFields() {
+            const selectedValue = document.querySelector('input[name="titular_is_beneficiary"]:checked');
+            if (selectedValue && selectedValue.value === 'no') {
+                titularFields.classList.remove('hidden');
+            } else {
+                titularFields.classList.add('hidden');
+            }
+        }
+
+        titularRadios.forEach(function(radio) {
+            radio.addEventListener('change', toggleTitularFields);
+        });
+
+        // Check initial state
+        toggleTitularFields();
+    });
+</script>
+{% endblock %}

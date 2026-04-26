@@ -3,7 +3,8 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import (
     Beneficiary, Appointment, Communication, AppointmentHour, 
     SystemUser, Student, AppointmentType, AppointmentStatus, 
-    CommunicationType, ReasonType, SystemRole, Case, LegalRoom, CaseHistory, CaseStatus    
+    CommunicationType, ReasonType, SystemRole, Case, LegalRoom, CaseHistory, CaseStatus,
+    SexoChoices, PoblacionChoices, EtniaChoices, EstratoChoices, DiscapacidadChoices
 )
 
 
@@ -554,6 +555,122 @@ class CaseForm(forms.ModelForm):
         self.fields['student_assigned'].queryset = Student.objects.filter(available=True)
         self.fields['student_assigned'].required = False
         self.fields['legal_room'].required = False
+
+
+class CreateCaseFromAppointmentForm(forms.Form):
+    """Formulario para crear un caso desde una cita (vista estudiante)"""
+    title = forms.CharField(
+        label='Titulo del Caso',
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': COMMON_INPUT_CLASS,
+            'placeholder': 'Ej: Consulta laboral, Divorcio, etc.'
+        })
+    )
+    description = forms.CharField(
+        label='Descripcion del Caso',
+        widget=forms.Textarea(attrs={
+            'class': COMMON_TEXTAREA_CLASS,
+            'rows': 4,
+            'placeholder': 'Descripcion detallada del caso'
+        })
+    )
+    # Pregunta si el titular es el mismo que solicito la cita
+    titular_is_beneficiary = forms.ChoiceField(
+        label='El titular del caso es el mismo que solicito la cita?',
+        choices=[('yes', 'Si, es la misma persona'), ('no', 'No, es otra persona')],
+        widget=forms.RadioSelect(attrs={'class': 'w-5 h-5 text-indigo-600 focus:ring-indigo-500'}),
+        initial='yes'
+    )
+    # Campos del titular (solo si no es el beneficiario)
+    titular_cedula = forms.CharField(
+        label='Cedula del Titular',
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': COMMON_INPUT_CLASS,
+            'placeholder': 'Numero de cedula'
+        })
+    )
+    titular_nombre = forms.CharField(
+        label='Nombre del Titular',
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': COMMON_INPUT_CLASS,
+            'placeholder': 'Nombre completo'
+        })
+    )
+    titular_telefono = forms.CharField(
+        label='Telefono del Titular',
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': COMMON_INPUT_CLASS,
+            'placeholder': 'Numero de telefono'
+        })
+    )
+    titular_correo = forms.EmailField(
+        label='Correo del Titular',
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': COMMON_INPUT_CLASS,
+            'placeholder': 'correo@ejemplo.com'
+        })
+    )
+    # Campos demograficos
+    sexo = forms.ChoiceField(
+        label='Sexo',
+        choices=[('', 'Seleccione...')] + list(SexoChoices.choices),
+        widget=forms.Select(attrs={'class': COMMON_SELECT_CLASS}),
+        required=True
+    )
+    poblacion = forms.ChoiceField(
+        label='Poblacion',
+        choices=[('', 'Seleccione...')] + list(PoblacionChoices.choices),
+        widget=forms.Select(attrs={'class': COMMON_SELECT_CLASS}),
+        required=True
+    )
+    etnia = forms.ChoiceField(
+        label='Etnia',
+        choices=[('', 'Seleccione...')] + list(EtniaChoices.choices),
+        widget=forms.Select(attrs={'class': COMMON_SELECT_CLASS}),
+        required=True
+    )
+    estrato = forms.ChoiceField(
+        label='Estrato',
+        choices=[('', 'Seleccione...')] + list(EstratoChoices.choices),
+        widget=forms.Select(attrs={'class': COMMON_SELECT_CLASS}),
+        required=True
+    )
+    discapacidad = forms.ChoiceField(
+        label='Discapacidad',
+        choices=[('', 'Seleccione...')] + list(DiscapacidadChoices.choices),
+        widget=forms.Select(attrs={'class': COMMON_SELECT_CLASS}),
+        required=True
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        titular_is_beneficiary = cleaned_data.get('titular_is_beneficiary')
+        
+        if titular_is_beneficiary == 'no':
+            # Validar que los campos del titular esten llenos
+            titular_cedula = cleaned_data.get('titular_cedula')
+            titular_nombre = cleaned_data.get('titular_nombre')
+            titular_telefono = cleaned_data.get('titular_telefono')
+            titular_correo = cleaned_data.get('titular_correo')
+            
+            if not titular_cedula:
+                self.add_error('titular_cedula', 'Este campo es requerido cuando el titular es diferente al beneficiario.')
+            if not titular_nombre:
+                self.add_error('titular_nombre', 'Este campo es requerido cuando el titular es diferente al beneficiario.')
+            if not titular_telefono:
+                self.add_error('titular_telefono', 'Este campo es requerido cuando el titular es diferente al beneficiario.')
+            if not titular_correo:
+                self.add_error('titular_correo', 'Este campo es requerido cuando el titular es diferente al beneficiario.')
+        
+        return cleaned_data
 
 
 class CaseEditForm(forms.ModelForm):

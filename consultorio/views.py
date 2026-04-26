@@ -25,7 +25,7 @@ from .models import (
 from .forms import (
     BeneficiaryForm, BeneficiaryEditForm, BeneficiaryProfileForm, BeneficiaryPasswordForm,
     AppointmentForm, AppointmentEditForm, AppointmentCancelForm, AttendanceForm, AppointmentRescheduleForm,
-    CaseForm, CaseEditForm, CaseHistoryForm, ReassignCaseForm,
+    CaseForm, CaseEditForm, CaseHistoryForm, ReassignCaseForm, CreateCaseFromAppointmentForm,
     CommunicationForm, SendEmailForm,
     LegalRoomForm, ReportFilterForm, CaseReportFilterForm,
     SystemUserCreationForm, StudentForm, PublicAppointmentForm,
@@ -1652,6 +1652,147 @@ class StudentAppointmentAvailabilityView(LoginRequiredMixin, View):
 
         messages.error(request, 'Accion no valida para la cita seleccionada.')
         return redirect('student-home')
+
+
+class StudentCreateCaseView(LoginRequiredMixin, View):
+    """Vista para crear un caso desde una cita (estudiante)"""
+    template_name = 'student/create_case.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not is_student_user(request.user):
+            messages.error(request, 'No tienes permisos para esta accion.')
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+
+    def _get_student_with_least_cases(self, exclude_student_id):
+        """Retorna el estudiante disponible con menos casos activos (diferente al que atiende la cita)"""
+        active_statuses = [CaseStatus.ASSIGNED, CaseStatus.IN_PROCESS]
+        
+        students = Student.objects.filter(
+            available=True
+        ).exclude(
+            id=exclude_student_id
+        ).annotate(
+            active_cases_count=Count(
+                'assigned_cases',
+                filter=Q(assigned_cases__status__in=active_statuses)
+            )
+        ).order_by('active_cases_count')
+        
+        if students.exists():
+            return students.first()
+        return None
+
+    def get(self, request, pk):
+        student_profile = getattr(request.user, 'student_profile', None)
+        if not student_profile:
+            messages.error(request, 'No se encontro el perfil del estudiante.')
+            return redirect('student-home')
+
+        appointment = get_object_or_404(
+            Appointment.objects.select_related('beneficiary', 'student_assigned__user'),
+            pk=pk,
+            student_assigned=student_profile
+        )
+
+        # Verificar que no exista ya un caso para esta cita
+        if Case.objects.filter(appointment_origin=appointment).exists():
+            messages.warning(request, 'Ya existe un caso creado para esta cita.')
+            return redirect('student-home')
+
+        form = CreateCaseFromAppointmentForm()
+
+        return render(request, self.template_name, {
+            'form': form,
+            'appointment': appointment,
+            'beneficiary': appointment.beneficiary,
+        })
+
+    def post(self, request, pk):
+        student_profile = getattr(request.user, 'student_profile', None)
+        if not student_profile:
+            messages.error(request, 'No se encontro el perfil del estudiante.')
+            return redirect('student-home')
+
+        appointment = get_object_or_404(
+            Appointment.objects.select_related('beneficiary', 'student_assigned__user'),
+            pk=pk,
+            student_assigned=student_profile
+        )
+
+        # Verificar que no exista ya un caso para esta cita
+        if Case.objects.filter(appointment_origin=appointment).exists():
+            messages.warning(request, 'Ya existe un caso creado para esta cita.')
+            return redirect('student-home')
+
+        form = CreateCaseFromAppointmentForm(request.POST)
+
+        if form.is_valid():
+            # Obtener el estudiante con menos casos activos (diferente al que atiende la cita)
+            assigned_student = self._get_student_with_least_cases(student_profile.id)
+
+            if not assigned_student:
+                messages.error(request, 'No hay estudiantes disponibles para asignar el caso.')
+                return render(request, self.template_name, {
+                    'form': form,
+                    'appointment': appointment,
+                    'beneficiary': appointment.beneficiary,
+                })
+
+            # Determinar si el titular es el beneficiario
+            titular_is_beneficiary = form.cleaned_data['titular_is_beneficiary'] == 'yes'
+
+            # Crear el caso
+            case = Case.objects.create(
+                title=form.cleaned_data['title'],
+                description=form.cleaned_data['description'],
+                beneficiary=appointment.beneficiary,
+                student_assigned=assigned_student,
+                appointment_origin=appointment,
+                titular_is_beneficiary=titular_is_beneficiary,
+                titular_cedula=form.cleaned_data.get('titular_cedula') if not titular_is_beneficiary else None,
+                titular_nombre=form.cleaned_data.get('titular_nombre') if not titular_is_beneficiary else None,
+                titular_telefono=form.cleaned_data.get('titular_telefono') if not titular_is_beneficiary else None,
+                titular_correo=form.cleaned_data.get('titular_correo') if not titular_is_beneficiary else None,
+                sexo=form.cleaned_data['sexo'],
+                poblacion=form.cleaned_data['poblacion'],
+                etnia=form.cleaned_data['etnia'],
+                estrato=form.cleaned_data['estrato'],
+                discapacidad=form.cleaned_data['discapacidad'],
+                status=CaseStatus.IN_PROCESS,
+            )
+
+            # Asociar el caso a la cita
+            appointment.case = case
+            appointment.save(update_fields=['case', 'updated_at'])
+
+            # Registrar en historial del caso
+            CaseHistory.objects.create(
+                case=case,
+                action='Caso creado desde cita',
+                observation=f'Caso creado por {request.user.get_full_name()} desde la cita del {appointment.date.strftime("%d/%m/%Y")}',
+                responsible=student_profile
+            )
+
+            # Notificar al estudiante asignado
+            Notification.objects.create(
+                user=assigned_student.user,
+                event_type=EventType.CASE_ASSIGNED,
+                title='Nuevo caso asignado',
+                message=f'Se te ha asignado el caso "{case.title}" (ID: {str(case.id)[:8]})'
+            )
+
+            messages.success(
+                request, 
+                f'Caso creado exitosamente y asignado a {assigned_student.user.get_full_name()}.'
+            )
+            return redirect('student-home')
+
+        return render(request, self.template_name, {
+            'form': form,
+            'appointment': appointment,
+            'beneficiary': appointment.beneficiary,
+        })
 
 
 # ==================== BENEFICIARY HOME VIEW (NEW) ====================

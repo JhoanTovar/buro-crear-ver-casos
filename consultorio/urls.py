@@ -8,7 +8,7 @@ from .views import (
     # Profile
     ProfileView, ProfilePasswordView,
     # Student Home
-    StudentHomeView, StudentAppointmentAvailabilityView,
+    StudentHomeView, StudentAppointmentAvailabilityView, StudentCreateCaseView,
     # Beneficiary Home (new)
     BeneficiaryHomeView, BeneficiaryAppointmentDetailView, BeneficiaryProfileView, BeneficiaryProfileUpdateView,
     BeneficiaryProfilePasswordView, BeneficiaryLogoutView, BeneficiaryNotificationsView, BeneficiaryNotificationMarkReadView,
@@ -56,6 +56,7 @@ urlpatterns = [
 
     # Student shared modules (DRY: reusan vistas existentes)
     path('student/citas/<uuid:pk>/disponibilidad/', StudentAppointmentAvailabilityView.as_view(), name='student-appointment-availability'),
+    path('student/citas/<uuid:pk>/crear-caso/', StudentCreateCaseView.as_view(), name='student-create-case'),
     path('student/appointments/', AppointmentListView.as_view(), name='student-appointment-list'),
     path('student/email/', SendEmailView.as_view(), name='student-send-email'),
     path('student/notifications/', NotificationListView.as_view(), name='student-notification-list'),
