@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Agendar Cita - Consultorio Juridico{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'appointment-list' %}" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mb-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Volver a citas
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900">Agendar Cita</h1>
+        <p class="text-gray-600">Complete el formulario para programar una nueva cita</p>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="space-y-6">
+                <!-- Beneficiario -->
+                <div>
+                    <label for="id_beneficiary" class="block text-sm font-medium text-gray-700 mb-1">Beneficiario *</label>
+                    {{ form.beneficiary }}
+                    {% if form.beneficiary.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.beneficiary.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-sm text-gray-500 mt-1">
+                        No encuentra al beneficiario? <a href="{% url 'beneficiary-create' %}" class="text-blue-600 hover:text-blue-700">Registrarlo aqui</a>
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Fecha y Hora -->
+                    <div>
+                        <label for="id_date" class="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora *</label>
+                        {{ form.date }}
+                        {% if form.date.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.date.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tipo de Cita -->
+                    <div>
+                        <label for="id_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Cita *</label>
+                        {{ form.type }}
+                        {% if form.type.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.type.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Motivo -->
+                    <div>
+                        <label for="id_reason_type" class="block text-sm font-medium text-gray-700 mb-1">Motivo de la Cita *</label>
+                        {{ form.reason_type }}
+                        {% if form.reason_type.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.reason_type.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Estudiante Asignado -->
+                    <div>
+                        <label for="id_student_assigned" class="block text-sm font-medium text-gray-700 mb-1">Estudiante Asignado</label>
+                        {{ form.student_assigned }}
+                        {% if form.student_assigned.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.student_assigned.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-sm text-gray-500 mt-1">Opcional. Puede asignarse despues.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+                <a href="{% url 'appointment-list' %}" class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                    Agendar Cita
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

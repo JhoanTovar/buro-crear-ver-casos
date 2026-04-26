@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Nuevo Usuario{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Registrar Nuevo Usuario</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre de Usuario *</label>
+                            <input type="text" name="username" class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                                   value="{{ form.username.value|default:'' }}" required>
+                            {% for error in form.username.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email *</label>
+                            <input type="email" name="email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                                   value="{{ form.email.value|default:'' }}" required>
+                            {% for error in form.email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" name="first_name" class="form-control {% if form.first_name.errors %}is-invalid{% endif %}" 
+                                   value="{{ form.first_name.value|default:'' }}" required>
+                            {% for error in form.first_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Apellido *</label>
+                            <input type="text" name="last_name" class="form-control {% if form.last_name.errors %}is-invalid{% endif %}" 
+                                   value="{{ form.last_name.value|default:'' }}" required>
+                            {% for error in form.last_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rol *</label>
+                            <select name="role" class="form-select {% if form.role.errors %}is-invalid{% endif %}" required>
+                                <option value="">Seleccionar rol...</option>
+                                <option value="ADMIN" {% if form.role.value == 'ADMIN' %}selected{% endif %}>Administrador</option>
+                                <option value="SECRETARY" {% if form.role.value == 'SECRETARY' %}selected{% endif %}>Secretaria</option>
+                                <option value="STUDENT" {% if form.role.value == 'STUDENT' %}selected{% endif %}>Estudiante</option>
+                                <option value="PROFESSOR" {% if form.role.value == 'PROFESSOR' %}selected{% endif %}>Profesor</option>
+                            </select>
+                            {% for error in form.role.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Telefono</label>
+                            <input type="tel" name="phone" class="form-control" value="{{ form.phone.value|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Contrasena *</label>
+                            <input type="password" name="password1" class="form-control {% if form.password1.errors %}is-invalid{% endif %}" required>
+                            {% for error in form.password1.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Confirmar Contrasena *</label>
+                            <input type="password" name="password2" class="form-control {% if form.password2.errors %}is-invalid{% endif %}" required>
+                            {% for error in form.password2.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Guardar Usuario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

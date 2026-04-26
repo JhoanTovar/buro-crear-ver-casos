@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuracion - Consultorio Juridico{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Configuracion</h1>
+    </div>
+
+    <!-- Informacion Personal -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Informacion Personal</h2>
+        
+        <div class="grid grid-cols-2 gap-6 mb-6">
+            <div>
+                <p class="text-sm text-gray-600 font-medium mb-1">Nombre Completo</p>
+                <p class="text-gray-900">{{ user.get_full_name|default:user.username }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600 font-medium mb-1">Usuario</p>
+                <p class="text-gray-900">{{ user.username }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600 font-medium mb-1">Rol</p>
+                <p class="text-gray-900">{{ user.get_role_display }}</p>
+            </div>
+        </div>
+        
+        <form method="post" action="{% url profile_post_url_name %}">
+            {% csrf_token %}
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="id_email" class="block text-sm font-medium text-gray-700 mb-2">
+                        Correo Electronico
+                    </label>
+                    {{ profile_form.email }}
+                    {% if profile_form.email.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ profile_form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_phone" class="block text-sm font-medium text-gray-700 mb-2">
+                        Telefono
+                    </label>
+                    {{ profile_form.phone }}
+                    {% if profile_form.phone.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ profile_form.phone.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Cambiar Contrasena -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Cambiar Contrasena</h2>
+        
+        <form method="post" action="{% url password_post_url_name %}">
+            {% csrf_token %}
+            
+            {% if password_form.non_field_errors %}
+            <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                {% for error in password_form.non_field_errors %}
+                    <p class="text-red-700">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="id_current_password" class="block text-sm font-medium text-gray-700 mb-2">
+                        Contrasena Actual
+                    </label>
+                    {{ password_form.current_password }}
+                    {% if password_form.current_password.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ password_form.current_password.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_new_password" class="block text-sm font-medium text-gray-700 mb-2">
+                        Nueva Contrasena
+                    </label>
+                    {{ password_form.new_password }}
+                    {% if password_form.new_password.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ password_form.new_password.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_confirm_password" class="block text-sm font-medium text-gray-700 mb-2">
+                        Confirmar Contrasena
+                    </label>
+                    {{ password_form.confirm_password }}
+                    {% if password_form.confirm_password.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ password_form.confirm_password.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <button type="submit" class="px-6 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors">
+                    Cambiar Contrasena
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

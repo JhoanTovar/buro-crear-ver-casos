@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+
+{% block sidebar %}
+<!-- Sin sidebar -->
+{% endblock %}
+
+{% block title %}Agendar Cita - Consultorio Jurídico{% endblock %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+<div class="max-w-5xl mx-auto">
+
+    <!-- Mensajes de Confirmación -->
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg border
+                    {% if message.tags == 'success' %}
+                        bg-green-100 text-green-800 border-green-300
+                    {% elif message.tags == 'error' %}
+                        bg-red-100 text-red-800 border-red-300
+                    {% else %}
+                        bg-blue-100 text-blue-800 border-blue-300
+                    {% endif %}
+                ">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Solicitar Cita</h1>
+        <p class="text-gray-600">
+            Complete el formulario y seleccione una fecha disponible en el calendario
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_260px] gap-6">
+
+        <!-- FORMULARIO -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="space-y-5">
+
+                    <!-- Nombre -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Nombre completo *
+                        </label>
+                        <input type="text" name="name" value="{{ form.name.value|default:'' }}" required
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        {% if form.name.errors %}
+                            <p class="text-red-500 text-sm">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Documento -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Cédula *
+                        </label>
+                        <input type="text" name="document" value="{{ form.document.value|default:'' }}" required
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        {% if form.document.errors %}
+                            <p class="text-red-500 text-sm">{{ form.document.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Celular *
+                        </label>
+                        <input type="text" name="phone" value="{{ form.phone.value|default:'' }}" required
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        {% if form.phone.errors %}
+                            <p class="text-red-500 text-sm">{{ form.phone.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Correo electrónico *
+                        </label>
+                        <input type="email" name="email" value="{{ form.email.value|default:'' }}" required
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        {% if form.email.errors %}
+                            <p class="text-red-500 text-sm">{{ form.email.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Fecha -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Fecha disponible *
+                        </label>
+                        <select name="date" id="dateSelect" required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="">Seleccione una fecha</option>
+                            {% for d in available_dates %}
+                                <option value="{{ d|date:'Y-m-d' }}"
+                                    {% if form.date.value == d|date:'Y-m-d' %}selected{% endif %}>
+                                    {{ d|date:'d/m/Y' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.date.errors %}
+                            <p class="text-red-500 text-sm">{{ form.date.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Hora -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Hora *
+                        </label>
+                        <select name="hour" id="hourSelect" required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="">Seleccione una hora</option>
+                        </select>
+                        {% if form.hour.errors %}
+                            <p class="text-red-500 text-sm">{{ form.hour.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tipo de cita -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Modalidad *
+                        </label>
+                        <select name="type" required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            {% for value, label in types %}
+                                <option value="{{ value }}"
+                                    {% if form.type.value == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Autorización -->
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" name="accept_data" required
+                               class="h-4 w-4"
+                               {% if form.accept_data.value %}checked{% endif %}>
+                        <label class="text-sm text-gray-700">
+                            Acepto el tratamiento de datos personales *
+                        </label>
+                    </div>
+                    {% if form.accept_data.errors %}
+                        <p class="text-red-500 text-sm">
+                            {{ form.accept_data.errors.0 }}
+                        </p>
+                    {% endif %}
+
+                </div>
+
+                <!-- Botón -->
+                <div class="mt-6">
+                    <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium">
+                        Agendar Cita
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- CALENDARIO -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold mb-4">Calendario de Disponibilidad</h2>
+            <div id="calendar"></div>
+            <p class="text-xs text-gray-500 mt-4">
+                Solo se muestran días con cupos disponibles (lunes a viernes).
+            </p>
+        </div>
+
+        <!-- PANEL DE ACCIONES RÁPIDAS -->
+        <div class="flex flex-col gap-4">
+
+            <!-- Widget: ¿Ya tienes una cita? -->
+            <div class="bg-blue-700 rounded-xl shadow-sm p-5 text-white">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-5 h-5 text-blue-200 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <p class="font-semibold text-base">¿Ya tienes una cita?</p>
+                </div>
+                <p class="text-blue-200 text-sm mb-4">
+                    Si necesitas cancelar o reprogramar tu cita, puedes hacerlo aquí.
+                </p>
+                <a href="{% url 'beneficiary-appointment-search' %}"
+                   class="block w-full text-center bg-white text-blue-700 font-semibold text-sm px-4 py-2.5 rounded-lg hover:bg-blue-50 transition">
+                    Cancelar o reprogramar
+                </a>
+
+                <!-- Divisor -->
+                <div class="border-t border-blue-500 my-4"></div>
+
+                <!-- Seguimiento de caso -->
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-5 h-5 text-blue-200 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <p class="font-semibold text-base">¿Quieres hacer seguimiento a tu caso?</p>
+                </div>
+                <p class="text-blue-200 text-sm mb-4">
+                    Ingresa al portal para consultar el estado de tu caso.
+                </p>
+                <a href="{% url 'unified-login' %}"
+                   class="block w-full text-center bg-blue-500 hover:bg-blue-400 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition">
+                    Consulta tu caso
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+{{ available_dates_json|json_script:"available-dates-data" }}
+{{ hours|json_script:"available-hours-data" }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const availableDates = JSON.parse(
+        document.getElementById('available-dates-data').textContent
+    );
+
+    const availableHours = JSON.parse(
+        document.getElementById('available-hours-data').textContent
+    );
+
+    const dateSelect = document.getElementById('dateSelect');
+    const hourSelect = document.getElementById('hourSelect');
+
+    // Cargar horas disponibles
+    function loadHours(date) {
+        hourSelect.innerHTML = '<option value="">Seleccione una hora</option>';
+
+        if (availableHours[date]) {
+            availableHours[date].forEach(hour => {
+                const option = document.createElement('option');
+                option.value = hour;
+                option.textContent = hour;
+                hourSelect.appendChild(option);
+            });
+        }
+    }
+
+    // Evento al cambiar fecha manualmente
+    dateSelect.addEventListener('change', function () {
+        loadHours(this.value);
+    });
+
+    // Cargar horas si hay fecha seleccionada (POST con errores)
+    if (dateSelect.value) {
+        loadHours(dateSelect.value);
+    }
+
+    // Inicializar FullCalendar
+    const calendarEl = document.getElementById('calendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        height: 500,
+        selectable: true,
+        validRange: {
+            start: new Date().toISOString().split("T")[0]
+        },
+        events: availableDates.map(date => ({
+            title: 'Disponible',
+            start: date,
+            allDay: true,
+            color: '#2563eb'
+        })),
+        dateClick: function(info) {
+            if (availableDates.includes(info.dateStr)) {
+                dateSelect.value = info.dateStr;
+                loadHours(info.dateStr);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                alert('No hay cupos disponibles para esta fecha.');
+            }
+        }
+    });
+
+    calendar.render();
+});
+</script>
+
+{% endblock %}

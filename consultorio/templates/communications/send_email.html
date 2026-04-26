@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Enviar Correo - Buro Legal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+    <div class="bg-white  shadow p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Enviar Correo Electronico</h1>
+
+        <div class="mb-6  border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            Enviando como: <span class="font-semibold">{{ user_name }}</span>
+            {% if user_email %}
+            <span class="text-blue-700">({{ user_email }})</span>
+            {% else %}
+            <span class="text-blue-700">(sin correo configurado)</span>
+            {% endif %}
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-end space-x-4">
+                <a href="{% url back_url_name %}" class="px-4 py-2 border border-gray-300  text-gray-700 hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white  hover:bg-green-700 transition-colors">
+                    Enviar Correo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

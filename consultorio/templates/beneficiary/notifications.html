@@ -1,0 +1,46 @@
+{% extends 'beneficiary/base_beneficiary.html' %}
+
+{% block title %}Notificaciones - Beneficiario{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Notificaciones</h1>
+        <p class="text-sm text-gray-600 mt-1">
+            {% if unread_count > 0 %}
+                Tienes {{ unread_count }} notificacion{% if unread_count != 1 %}es{% endif %} sin leer.
+            {% else %}
+                No tienes notificaciones pendientes.
+            {% endif %}
+        </p>
+    </div>
+
+    {% if notifications %}
+    <div class="space-y-3">
+        {% for notification in notifications %}
+        <article class="bg-white rounded-xl border shadow-sm p-4 {% if not notification.read %}border-blue-200{% else %}border-gray-200{% endif %}">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 class="font-semibold text-gray-900">{{ notification.title }}</h2>
+                    <p class="text-xs text-gray-500 mt-1">{{ notification.date|date:"d/m/Y H:i" }}</p>
+                </div>
+                {% if not notification.read %}
+                <form method="post" action="{% url 'beneficiary-notification-mark-read' notification.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Marcar como leida</button>
+                </form>
+                {% else %}
+                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Leida</span>
+                {% endif %}
+            </div>
+            <p class="text-gray-700 mt-3">{{ notification.message }}</p>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-10 text-center">
+        <p class="text-gray-500">Aun no tienes notificaciones.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

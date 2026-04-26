@@ -1,0 +1,430 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - Buro Legal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #5454E9;
+            --color-primary-hover: #4747C6;
+            --color-text-dark: #1f2937;
+            --color-text-light: #6b7280;
+            --color-bg-light: #f0f0f0;
+            --color-border-soft: #d4d7dd;
+            --color-error-bg: #fef2f2;
+            --color-error-text: #b91c1c;
+            --color-error-border: #fecaca;
+            --color-success-bg: #f0fdf4;
+            --color-success-text: #166534;
+            --color-success-border: #bbf7d0;
+            --color-info-bg: #eff6ff;
+            --color-info-text: #1d4ed8;
+            --color-info-border: #bfdbfe;
+            --color-shadow-soft: 0 10px 28px rgba(17, 24, 39, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            font-family: 'Manrope', sans-serif;
+            color: var(--color-text-dark);
+            background: #ffffff;
+        }
+
+        .login-wrapper {
+            min-height: 100svh;
+            display: grid;
+            grid-template-columns: minmax(340px, 1fr) minmax(340px, 1fr);
+            background: #ffffff;
+        }
+
+        .login-hero {
+            position: relative;
+            background: var(--color-bg-light);
+            overflow: hidden;
+            isolation: isolate;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .hero-logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 3;
+            width: min(30vw, 165px);
+            max-width: 165px;
+        }
+
+        .hero-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+            filter: drop-shadow(0 6px 12px rgba(37, 99, 235, 0.18));
+        }
+
+        .hero-image-shell {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+            animation: riseIn 0.55s ease;
+        }
+
+        .login-content {
+            display: grid;
+            place-items: center;
+            padding: 44px 56px;
+            background: #ffffff;
+            animation: fadeIn 0.45s ease;
+        }
+
+        .login-container {
+            width: min(100%, 440px);
+        }
+
+        .login-header {
+            margin-bottom: 28px;
+        }
+
+        .login-header h1 {
+            margin: 0;
+            font-family: 'Sora', sans-serif;
+            font-size: clamp(1.55rem, 2.2vw, 1.75rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #111827;
+            line-height: 1.15;
+        }
+
+        .login-header p {
+            margin: 9px 0 0;
+            font-size: clamp(0.9rem, 1.2vw, 1rem);
+            color: var(--color-text-light);
+            font-weight: 500;
+        }
+
+        .messages {
+            margin-bottom: 16px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .message {
+            border-radius: 0;
+            padding: 11px 13px;
+            border: 1px solid;
+            font-size: 0.925rem;
+            line-height: 1.35;
+            box-shadow: var(--color-shadow-soft);
+        }
+
+        .message-error {
+            background: var(--color-error-bg);
+            color: var(--color-error-text);
+            border-color: var(--color-error-border);
+        }
+
+        .message-success {
+            background: var(--color-success-bg);
+            color: var(--color-success-text);
+            border-color: var(--color-success-border);
+        }
+
+        .message-info {
+            background: var(--color-info-bg);
+            color: var(--color-info-text);
+            border-color: var(--color-info-border);
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .form-group {
+            display: grid;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-size: 0.93rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 48px;
+            border: 1px solid var(--color-border-soft);
+            border-radius: 0;
+            padding: 0 14px;
+            font-family: inherit;
+            font-size: 0.97rem;
+            color: #111827;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+        }
+
+        .submit-btn {
+            width: 100%;
+            height: 50px;
+            border: 1px solid var(--color-primary);
+            border-radius: 0;
+            background: var(--color-primary);
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.98rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            background: var(--color-primary-hover);
+            border-color: var(--color-primary-hover);
+        }
+
+        .submit-btn:active {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+
+        .links-row {
+            margin-top: 14px;
+            display: grid;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .inline-link {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        .inline-link:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        .login-footer {
+            margin-top: 28px;
+            padding-top: 18px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+
+        .login-footer strong {
+            display: block;
+            color: #374151;
+            margin-bottom: 3px;
+            font-size: 0.85rem;
+        }
+
+        input,
+        button,
+        textarea,
+        select,
+        .login-container,
+        .message {
+            border-radius: 0 !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes riseIn {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .login-content {
+                padding: 34px 40px;
+            }
+
+            .login-container {
+                width: min(100%, 400px);
+            }
+        }
+
+        @media (max-width: 767px) {
+            .login-wrapper {
+                grid-template-columns: 1fr;
+                min-height: 100svh;
+            }
+
+            .login-hero {
+                display: none;
+            }
+
+            .login-content {
+                min-height: 100svh;
+                padding: 28px 20px;
+            }
+
+            .login-container {
+                width: min(100%, 520px);
+            }
+
+            .login-header {
+                margin-bottom: 24px;
+            }
+
+            .form-grid {
+                gap: 16px;
+            }
+
+            .login-footer {
+                margin-top: 24px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 479px) {
+            .login-content {
+                padding: 18px 16px;
+            }
+
+            .login-header h1 {
+                font-size: 1.42rem;
+            }
+
+            .login-header p {
+                font-size: 0.92rem;
+            }
+
+            .form-input {
+                height: 46px;
+                font-size: 0.94rem;
+            }
+
+            .submit-btn {
+                height: 48px;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <aside class="login-hero" aria-hidden="true">
+            <div class="hero-logo">
+                <img src="{% static 'consultorio/images/logo-icesi-azul.svg' %}" alt="Logo Icesi">
+            </div>
+            <div class="hero-image-shell">
+                <img src="{% static 'consultorio/images/hero.png' %}" alt="Profesionales de derecho" class="hero-image">
+            </div>
+        </aside>
+
+        <main class="login-content">
+            <section class="login-container" aria-labelledby="login-title">
+                <header class="login-header">
+                    <h1 id="login-title">Login Buro</h1>
+                    <p>Consultorio juridico - {{ user_type_label }}</p>
+                </header>
+
+                {% if messages %}
+                <div class="messages" role="status" aria-live="polite">
+                    {% for message in messages %}
+                    <div class="message {% if message.tags == 'error' %}message-error{% elif message.tags == 'success' %}message-success{% else %}message-info{% endif %}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'login' %}" class="form-grid">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_type" value="{{ user_type }}">
+
+                    <div class="form-group">
+                        <label for="document" class="form-label">
+                            {% if user_type == 'beneficiary' %}Numero de cedula{% elif user_type == 'admin' %}Usuario{% else %}Usuario o cedula{% endif %}
+                        </label>
+                        <input
+                            type="text"
+                            id="document"
+                            name="document"
+                            value="{{ document|default:'' }}"
+                            class="form-input"
+                            placeholder="Ingresa tu usuario"
+                            autocomplete="username"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Contrasena</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-input"
+                            placeholder="Ingresa tu contrasena"
+                            autocomplete="current-password"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="submit-btn">Ingresar</button>
+                </form>
+
+                <div class="links-row">
+                    <a href="mailto:consultorio.juridico@correo.icesi.edu.co" class="inline-link">Olvide mi contrasena</a>
+                    <a href="{% url 'unified-login' %}" class="inline-link">Cambiar tipo de usuario</a>
+                </div>
+
+                <footer class="login-footer">
+                    <strong>Consultorio Juridico Universidad Icesi</strong>
+                    Cali, Colombia | Contacto: consultorio.juridico@correo.icesi.edu.co
+                </footer>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Calendario de Citas{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Calendario de Citas</h1>
+        <a href="{% url 'appointment-create' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+            Nueva Cita
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <form method="get" class="flex gap-4 items-end">
+            <div>
+                <label for="student" class="block text-sm font-medium text-gray-700 mb-1">
+                    Estudiante
+                </label>
+                <select name="student" id="student" class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">Todos</option>
+                    {% for student in students %}
+                        <option value="{{ student.id }}" {% if selected_student|stringformat:"s" == student.id|stringformat:"s" %}selected{% endif %}>
+                            {{ student.user.get_full_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="month" class="block text-sm font-medium text-gray-700 mb-1">
+                    Mes
+                </label>
+                <select name="month" id="month" class="px-4 py-2 border border-gray-300 rounded-lg">
+                    {% for m in "123456789101112"|make_list %}
+                        <option value="{{ m }}" {% if selected_date.month|stringformat:"d" == m %}selected{% endif %}>
+                            {% if m == "1" %}Enero
+                            {% elif m == "2" %}Febrero
+                            {% elif m == "3" %}Marzo
+                            {% elif m == "4" %}Abril
+                            {% elif m == "5" %}Mayo
+                            {% elif m == "6" %}Junio
+                            {% elif m == "7" %}Julio
+                            {% elif m == "8" %}Agosto
+                            {% elif m == "9" %}Septiembre
+                            {% elif m == "10" %}Octubre
+                            {% elif m == "11" %}Noviembre
+                            {% elif m == "12" %}Diciembre
+                            {% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="year" class="block text-sm font-medium text-gray-700 mb-1">
+                    Año
+                </label>
+                <input type="number" name="year" id="year" value="{{ selected_date.year }}" class="px-4 py-2 border border-gray-300 rounded-lg w-20">
+            </div>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                Filtrar
+            </button>
+        </form>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="flex flex-wrap gap-6">
+            <span class="flex items-center gap-2"><span class="w-4 h-4 bg-blue-500 rounded"></span> Pendiente</span>
+            <span class="flex items-center gap-2"><span class="w-4 h-4 bg-green-500 rounded"></span> Confirmada</span>
+            <span class="flex items-center gap-2"><span class="w-4 h-4 bg-red-500 rounded"></span> Cancelada</span>
+            <span class="flex items-center gap-2"><span class="w-4 h-4 bg-gray-500 rounded"></span> Completada</span>
+            <span class="flex items-center gap-2"><span class="w-4 h-4 bg-yellow-500 rounded"></span> Inasistencia</span>
+        </div>
+    </div>
+
+    <!-- Calendario -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="grid grid-cols-7 gap-0 border-b border-gray-200">
+            {% for day_name in "DoLuMaMiJuSa"|make_list %}
+            <div class="p-4 text-center font-semibold text-gray-700 bg-gray-50 border-r border-gray-200">
+                {% if day_name == "Do" %}Domingo
+                {% elif day_name == "Lu" %}Lunes
+                {% elif day_name == "Ma" %}Martes
+                {% elif day_name == "Mi" %}Miércoles
+                {% elif day_name == "Ju" %}Jueves
+                {% elif day_name == "Vi" %}Viernes
+                {% elif day_name == "Sa" %}Sábado
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="grid grid-cols-7 gap-0">
+            {% widthratio selected_date.month 1 1 as current_month %}
+            {% for day in "31"|make_list %}
+                {% with day_num=day|add:"1" %}
+                {% if day_num < selected_date|date:"d"|add:"0" or forloop.counter < selected_date|date:"w"|add:"1" %}
+                    <div class="p-4 min-h-24 border-r border-b border-gray-200 bg-gray-50"></div>
+                {% else %}
+                    <div class="p-4 min-h-24 border-r border-b border-gray-200">
+                        {% load tz %}
+                        {% now "Y-m-d" as today %}
+                        <div class="font-semibold text-gray-900 mb-2">
+                            {{ day|add:"0" }}
+                        </div>
+                        {% with date_key=selected_date|date:"Y-m-"|add:day|add:"0" %}
+                        {% if date_key in appointments_by_date %}
+                            <div class="space-y-1">
+                                {% for appt in appointments_by_date|get_item:date_key %}
+                                <a href="{% url 'appointment-detail' appt.pk %}" class="block p-1 text-xs rounded text-white truncate
+                                    {% if appt.status == 'PENDING' %}bg-blue-500
+                                    {% elif appt.status == 'CONFIRMED' %}bg-green-500
+                                    {% elif appt.status == 'CANCELLED' %}bg-red-500
+                                    {% elif appt.status == 'COMPLETED' %}bg-gray-500
+                                    {% elif appt.status == 'ABSENCE' %}bg-yellow-500
+                                    {% else %}bg-blue-500
+                                    {% endif %}" title="{{ appt.beneficiary.name }}">
+                                    {{ appt.date|time:"H:i" }} {{ appt.beneficiary.name|truncatewords:2 }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                {% endif %}
+                {% endwith %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% comment %}
+Custom template filter to get dictionary items in Django templates
+{% endcomment %}
+{% endblock %}
