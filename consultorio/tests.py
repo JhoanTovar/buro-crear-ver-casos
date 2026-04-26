@@ -1268,3 +1268,588 @@ class UnassignedAppointmentsModuleTest(TestCase):
         self.appt_without_hour.refresh_from_db()
         self.assertEqual(self.appt_without_hour.student_assigned, self.second_student)
         self.assertEqual(self.appt_without_hour.status, AppointmentStatus.CONFIRMED)
+
+
+# ===================== CREATE CASE FROM APPOINTMENT TESTS =====================
+
+from consultorio.models import Case, CaseStatus, SexoChoices, PoblacionChoices, EtniaChoices, EstratoChoices, DiscapacidadChoices
+from consultorio.forms import CreateCaseFromAppointmentForm
+
+
+class CreateCaseFromAppointmentFormTest(TestCase):
+    """Pruebas unitarias para el formulario CreateCaseFromAppointmentForm"""
+
+    def test_form_valid_with_titular_is_beneficiary(self):
+        """El formulario debe ser valido cuando el titular es el mismo beneficiario"""
+        form_data = {
+            'title': 'Consulta laboral',
+            'description': 'Descripcion del caso de prueba',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.MASCULINO,
+            'poblacion': PoblacionChoices.NINGUNA,
+            'etnia': EtniaChoices.NINGUNA,
+            'estrato': EstratoChoices.ESTRATO_2,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        form = CreateCaseFromAppointmentForm(data=form_data)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_form_valid_with_titular_different_from_beneficiary(self):
+        """El formulario debe ser valido cuando el titular es diferente y se proveen sus datos"""
+        form_data = {
+            'title': 'Consulta laboral',
+            'description': 'Descripcion del caso de prueba',
+            'titular_is_beneficiary': 'no',
+            'titular_cedula': '12345678',
+            'titular_nombre': 'Juan Titular',
+            'titular_telefono': '3001234567',
+            'titular_correo': 'titular@test.com',
+            'sexo': SexoChoices.MASCULINO,
+            'poblacion': PoblacionChoices.DESPLAZADO,
+            'etnia': EtniaChoices.AFRODESCENDIENTE,
+            'estrato': EstratoChoices.ESTRATO_1,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        form = CreateCaseFromAppointmentForm(data=form_data)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_form_invalid_when_titular_different_without_data(self):
+        """El formulario debe ser invalido si el titular es diferente pero no se proveen sus datos"""
+        form_data = {
+            'title': 'Consulta laboral',
+            'description': 'Descripcion del caso de prueba',
+            'titular_is_beneficiary': 'no',
+            # Faltan datos del titular
+            'sexo': SexoChoices.MASCULINO,
+            'poblacion': PoblacionChoices.NINGUNA,
+            'etnia': EtniaChoices.NINGUNA,
+            'estrato': EstratoChoices.ESTRATO_2,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        form = CreateCaseFromAppointmentForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('titular_cedula', form.errors)
+        self.assertIn('titular_nombre', form.errors)
+        self.assertIn('titular_telefono', form.errors)
+        self.assertIn('titular_correo', form.errors)
+
+    def test_form_invalid_without_title(self):
+        """El formulario debe ser invalido sin titulo"""
+        form_data = {
+            'description': 'Descripcion del caso de prueba',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.MASCULINO,
+            'poblacion': PoblacionChoices.NINGUNA,
+            'etnia': EtniaChoices.NINGUNA,
+            'estrato': EstratoChoices.ESTRATO_2,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        form = CreateCaseFromAppointmentForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('title', form.errors)
+
+    def test_form_invalid_without_demographic_fields(self):
+        """El formulario debe ser invalido si faltan campos demograficos obligatorios"""
+        form_data = {
+            'title': 'Consulta laboral',
+            'description': 'Descripcion del caso de prueba',
+            'titular_is_beneficiary': 'yes',
+            # Faltan sexo, poblacion, etnia, estrato, discapacidad
+        }
+        form = CreateCaseFromAppointmentForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('sexo', form.errors)
+        self.assertIn('poblacion', form.errors)
+        self.assertIn('etnia', form.errors)
+        self.assertIn('estrato', form.errors)
+        self.assertIn('discapacidad', form.errors)
+
+
+class StudentCreateCaseViewTest(TestCase):
+    """Pruebas unitarias para la vista StudentCreateCaseView"""
+
+    def setUp(self):
+        # Crear estudiante que atiende la cita
+        self.student_user = SystemUser.objects.create_user(
+            username='student01',
+            email='student01@test.com',
+            password='Test1234!',
+            first_name='Estudiante',
+            last_name='Uno',
+            role=SystemRole.STUDENT,
+            is_active=True
+        )
+        self.student = Student.objects.create(
+            user=self.student_user,
+            enrollment_professional='STU001',
+            available=True
+        )
+
+        # Crear otros estudiantes para la asignacion automatica
+        self.student_user_2 = SystemUser.objects.create_user(
+            username='student02',
+            email='student02@test.com',
+            password='Test1234!',
+            first_name='Estudiante',
+            last_name='Dos',
+            role=SystemRole.STUDENT,
+            is_active=True
+        )
+        self.student_2 = Student.objects.create(
+            user=self.student_user_2,
+            enrollment_professional='STU002',
+            available=True
+        )
+
+        self.student_user_3 = SystemUser.objects.create_user(
+            username='student03',
+            email='student03@test.com',
+            password='Test1234!',
+            first_name='Estudiante',
+            last_name='Tres',
+            role=SystemRole.STUDENT,
+            is_active=True
+        )
+        self.student_3 = Student.objects.create(
+            user=self.student_user_3,
+            enrollment_professional='STU003',
+            available=True
+        )
+
+        # Crear beneficiario
+        self.beneficiary = Beneficiary.objects.create(
+            name='Pedro Lopez',
+            document='9876543210',
+            address='Calle Test 123',
+            phone='3009876543',
+            email='pedro@test.com',
+            is_authorized=True
+        )
+
+        # Crear cita asignada al estudiante
+        self.appointment = Appointment.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.student,
+            date=timezone.now() + timedelta(days=1),
+            status=AppointmentStatus.CONFIRMED,
+            reason_type=ReasonType.FIRST_TIME
+        )
+
+    def test_view_requires_login(self):
+        """La vista debe requerir autenticacion"""
+        response = self.client.get(reverse('student-create-case', args=[self.appointment.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+
+    def test_view_requires_student_role(self):
+        """La vista debe rechazar usuarios que no son estudiantes"""
+        admin_user = SystemUser.objects.create_user(
+            username='admin01',
+            email='admin@test.com',
+            password='Admin1234!',
+            role=SystemRole.ADMIN,
+            is_active=True
+        )
+        self.client.force_login(admin_user)
+        response = self.client.get(reverse('student-create-case', args=[self.appointment.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('home'))
+
+    def test_view_loads_form_correctly(self):
+        """La vista debe cargar el formulario correctamente para el estudiante asignado"""
+        self.client.force_login(self.student_user)
+        response = self.client.get(reverse('student-create-case', args=[self.appointment.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+        self.assertIn('appointment', response.context)
+        self.assertIn('beneficiary', response.context)
+        self.assertEqual(response.context['appointment'], self.appointment)
+        self.assertEqual(response.context['beneficiary'], self.beneficiary)
+
+    def test_create_case_successfully(self):
+        """Debe crear un caso exitosamente con los datos correctos"""
+        self.client.force_login(self.student_user)
+        form_data = {
+            'title': 'Consulta sobre despido injustificado',
+            'description': 'El cliente fue despedido sin justa causa',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.MASCULINO,
+            'poblacion': PoblacionChoices.NINGUNA,
+            'etnia': EtniaChoices.NINGUNA,
+            'estrato': EstratoChoices.ESTRATO_2,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        response = self.client.post(
+            reverse('student-create-case', args=[self.appointment.pk]),
+            form_data
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('student-home'))
+
+        # Verificar que el caso fue creado
+        self.assertEqual(Case.objects.count(), 1)
+        case = Case.objects.first()
+        self.assertEqual(case.title, 'Consulta sobre despido injustificado')
+        self.assertEqual(case.beneficiary, self.beneficiary)
+        self.assertEqual(case.appointment_origin, self.appointment)
+        self.assertTrue(case.titular_is_beneficiary)
+        self.assertEqual(case.sexo, SexoChoices.MASCULINO)
+        self.assertEqual(case.status, CaseStatus.IN_PROCESS)
+
+    def test_case_assigned_to_student_with_least_cases(self):
+        """El caso debe asignarse al estudiante con menos casos activos (diferente al que atiende la cita)"""
+        # Crear casos para student_2 (tendra 2 casos)
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.student_2,
+            description='Caso 1 del estudiante 2',
+            status=CaseStatus.IN_PROCESS
+        )
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.student_2,
+            description='Caso 2 del estudiante 2',
+            status=CaseStatus.ASSIGNED
+        )
+
+        # Crear caso para student_3 (tendra 1 caso)
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.student_3,
+            description='Caso 1 del estudiante 3',
+            status=CaseStatus.IN_PROCESS
+        )
+
+        self.client.force_login(self.student_user)
+        form_data = {
+            'title': 'Nuevo caso de prueba',
+            'description': 'Descripcion del nuevo caso',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.FEMENINO,
+            'poblacion': PoblacionChoices.DESPLAZADO,
+            'etnia': EtniaChoices.INDIGENA,
+            'estrato': EstratoChoices.ESTRATO_1,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        response = self.client.post(
+            reverse('student-create-case', args=[self.appointment.pk]),
+            form_data
+        )
+        self.assertEqual(response.status_code, 302)
+
+        # El nuevo caso debe asignarse a student_3 (tiene menos casos: 1)
+        new_case = Case.objects.filter(title='Nuevo caso de prueba').first()
+        self.assertIsNotNone(new_case)
+        self.assertEqual(new_case.student_assigned, self.student_3)
+
+    def test_case_not_assigned_to_attending_student(self):
+        """El caso NO debe asignarse al estudiante que atiende la cita"""
+        self.client.force_login(self.student_user)
+        form_data = {
+            'title': 'Caso que no debe ir al que atiende',
+            'description': 'Descripcion del caso',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.MASCULINO,
+            'poblacion': PoblacionChoices.NINGUNA,
+            'etnia': EtniaChoices.NINGUNA,
+            'estrato': EstratoChoices.ESTRATO_3,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        response = self.client.post(
+            reverse('student-create-case', args=[self.appointment.pk]),
+            form_data
+        )
+        self.assertEqual(response.status_code, 302)
+
+        new_case = Case.objects.filter(title='Caso que no debe ir al que atiende').first()
+        self.assertIsNotNone(new_case)
+        # Debe asignarse a student_2 o student_3, pero NO a self.student (el que atiende)
+        self.assertNotEqual(new_case.student_assigned, self.student)
+
+    def test_create_case_with_different_titular(self):
+        """Debe crear un caso con titular diferente al beneficiario"""
+        self.client.force_login(self.student_user)
+        form_data = {
+            'title': 'Caso con titular diferente',
+            'description': 'Descripcion del caso',
+            'titular_is_beneficiary': 'no',
+            'titular_cedula': '11111111',
+            'titular_nombre': 'Maria Titular',
+            'titular_telefono': '3005555555',
+            'titular_correo': 'maria.titular@test.com',
+            'sexo': SexoChoices.FEMENINO,
+            'poblacion': PoblacionChoices.VICTIMA,
+            'etnia': EtniaChoices.AFRODESCENDIENTE,
+            'estrato': EstratoChoices.ESTRATO_1,
+            'discapacidad': DiscapacidadChoices.FISICA,
+        }
+        response = self.client.post(
+            reverse('student-create-case', args=[self.appointment.pk]),
+            form_data
+        )
+        self.assertEqual(response.status_code, 302)
+
+        case = Case.objects.filter(title='Caso con titular diferente').first()
+        self.assertIsNotNone(case)
+        self.assertFalse(case.titular_is_beneficiary)
+        self.assertEqual(case.titular_cedula, '11111111')
+        self.assertEqual(case.titular_nombre, 'Maria Titular')
+        self.assertEqual(case.titular_telefono, '3005555555')
+        self.assertEqual(case.titular_correo, 'maria.titular@test.com')
+
+    def test_cannot_create_duplicate_case_for_appointment(self):
+        """No debe permitir crear mas de un caso para la misma cita"""
+        # Crear un caso para la cita
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.student_2,
+            description='Caso ya existente',
+            appointment_origin=self.appointment,
+            status=CaseStatus.IN_PROCESS
+        )
+
+        self.client.force_login(self.student_user)
+        form_data = {
+            'title': 'Intento de caso duplicado',
+            'description': 'Este caso no deberia crearse',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.MASCULINO,
+            'poblacion': PoblacionChoices.NINGUNA,
+            'etnia': EtniaChoices.NINGUNA,
+            'estrato': EstratoChoices.ESTRATO_2,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        response = self.client.post(
+            reverse('student-create-case', args=[self.appointment.pk]),
+            form_data
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('student-home'))
+
+        # Solo debe existir el caso original, no el duplicado
+        self.assertEqual(Case.objects.count(), 1)
+        self.assertFalse(Case.objects.filter(title='Intento de caso duplicado').exists())
+
+    def test_notification_created_for_assigned_student(self):
+        """Debe crear una notificacion para el estudiante al que se asigna el caso"""
+        initial_notifications = Notification.objects.count()
+
+        self.client.force_login(self.student_user)
+        form_data = {
+            'title': 'Caso con notificacion',
+            'description': 'Descripcion del caso',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.MASCULINO,
+            'poblacion': PoblacionChoices.NINGUNA,
+            'etnia': EtniaChoices.NINGUNA,
+            'estrato': EstratoChoices.ESTRATO_2,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        self.client.post(
+            reverse('student-create-case', args=[self.appointment.pk]),
+            form_data
+        )
+
+        # Debe haberse creado una notificacion
+        self.assertEqual(Notification.objects.count(), initial_notifications + 1)
+        notification = Notification.objects.latest('date')
+        self.assertEqual(notification.event_type, EventType.CASE_ASSIGNED)
+        self.assertIn('asignado', notification.title.lower())
+
+
+class AutoAssignStudentLogicTest(TestCase):
+    """Pruebas especificas para la logica de auto-asignacion de estudiantes"""
+
+    def setUp(self):
+        # Crear 4 estudiantes disponibles
+        self.students = []
+        for i in range(1, 5):
+            user = SystemUser.objects.create_user(
+                username=f'student{i:02d}',
+                email=f'student{i:02d}@test.com',
+                password='Test1234!',
+                first_name=f'Estudiante',
+                last_name=f'Numero {i}',
+                role=SystemRole.STUDENT,
+                is_active=True
+            )
+            student = Student.objects.create(
+                user=user,
+                enrollment_professional=f'STU{i:03d}',
+                available=True
+            )
+            self.students.append(student)
+
+        # Crear estudiante que atiende la cita
+        self.attending_user = SystemUser.objects.create_user(
+            username='attending_student',
+            email='attending@test.com',
+            password='Test1234!',
+            first_name='Estudiante',
+            last_name='Atendiendo',
+            role=SystemRole.STUDENT,
+            is_active=True
+        )
+        self.attending_student = Student.objects.create(
+            user=self.attending_user,
+            enrollment_professional='STU_ATTENDING',
+            available=True
+        )
+
+        # Crear beneficiario
+        self.beneficiary = Beneficiary.objects.create(
+            name='Beneficiario Test',
+            document='1234567890',
+            address='Direccion Test',
+            phone='3001234567',
+            email='beneficiario@test.com',
+            is_authorized=True
+        )
+
+        # Crear cita
+        self.appointment = Appointment.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.attending_student,
+            date=timezone.now() + timedelta(days=1),
+            status=AppointmentStatus.CONFIRMED,
+            reason_type=ReasonType.FIRST_TIME
+        )
+
+    def test_assigns_to_student_with_zero_cases(self):
+        """Cuando hay estudiantes sin casos, debe asignarse a uno de ellos"""
+        # students[0] tendra 2 casos
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.students[0],
+            description='Caso 1',
+            status=CaseStatus.IN_PROCESS
+        )
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.students[0],
+            description='Caso 2',
+            status=CaseStatus.ASSIGNED
+        )
+
+        # students[1] tendra 1 caso
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.students[1],
+            description='Caso 3',
+            status=CaseStatus.IN_PROCESS
+        )
+
+        # students[2] y students[3] no tienen casos (0 casos)
+
+        self.client.force_login(self.attending_user)
+        form_data = {
+            'title': 'Caso para estudiante sin casos',
+            'description': 'Descripcion',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.MASCULINO,
+            'poblacion': PoblacionChoices.NINGUNA,
+            'etnia': EtniaChoices.NINGUNA,
+            'estrato': EstratoChoices.ESTRATO_2,
+            'discapacidad': DiscapacidadChoices.NINGUNA,
+        }
+        self.client.post(
+            reverse('student-create-case', args=[self.appointment.pk]),
+            form_data
+        )
+
+        new_case = Case.objects.filter(title='Caso para estudiante sin casos').first()
+        self.assertIsNotNone(new_case)
+        # Debe asignarse a students[2] o students[3] (ambos con 0 casos)
+        self.assertIn(new_case.student_assigned, [self.students[2], self.students[3]])
+
+    def test_ignores_closed_cases_in_count(self):
+        """Los casos cerrados no deben contar para la asignacion"""
+        # students[0] tendra 1 caso activo + 5 cerrados
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.students[0],
+            description='Caso activo',
+            status=CaseStatus.IN_PROCESS
+        )
+        for i in range(5):
+            Case.objects.create(
+                beneficiary=self.beneficiary,
+                student_assigned=self.students[0],
+                description=f'Caso cerrado {i}',
+                status=CaseStatus.CLOSED
+            )
+
+        # students[1] tendra 2 casos activos
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.students[1],
+            description='Caso activo 1',
+            status=CaseStatus.IN_PROCESS
+        )
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.students[1],
+            description='Caso activo 2',
+            status=CaseStatus.ASSIGNED
+        )
+
+        self.client.force_login(self.attending_user)
+        form_data = {
+            'title': 'Caso ignorando cerrados',
+            'description': 'Descripcion',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.FEMENINO,
+            'poblacion': PoblacionChoices.MIGRANTE,
+            'etnia': EtniaChoices.ROM,
+            'estrato': EstratoChoices.ESTRATO_1,
+            'discapacidad': DiscapacidadChoices.AUDITIVA,
+        }
+        self.client.post(
+            reverse('student-create-case', args=[self.appointment.pk]),
+            form_data
+        )
+
+        new_case = Case.objects.filter(title='Caso ignorando cerrados').first()
+        self.assertIsNotNone(new_case)
+        # Debe asignarse a students[2] o students[3] (0 casos) o students[0] (1 activo)
+        # NO a students[1] que tiene 2 activos
+        self.assertNotEqual(new_case.student_assigned, self.students[1])
+
+    def test_excludes_unavailable_students(self):
+        """Los estudiantes no disponibles no deben recibir casos"""
+        # Marcar students[2] y students[3] como no disponibles
+        self.students[2].available = False
+        self.students[2].save()
+        self.students[3].available = False
+        self.students[3].save()
+
+        # students[0] tendra 1 caso
+        Case.objects.create(
+            beneficiary=self.beneficiary,
+            student_assigned=self.students[0],
+            description='Caso estudiante 0',
+            status=CaseStatus.IN_PROCESS
+        )
+
+        # students[1] tendra 0 casos (es el unico disponible sin casos)
+
+        self.client.force_login(self.attending_user)
+        form_data = {
+            'title': 'Caso solo disponibles',
+            'description': 'Descripcion',
+            'titular_is_beneficiary': 'yes',
+            'sexo': SexoChoices.OTRO,
+            'poblacion': PoblacionChoices.REINSERTADO,
+            'etnia': EtniaChoices.PALENQUERO,
+            'estrato': EstratoChoices.ESTRATO_4,
+            'discapacidad': DiscapacidadChoices.COGNITIVA,
+        }
+        self.client.post(
+            reverse('student-create-case', args=[self.appointment.pk]),
+            form_data
+        )
+
+        new_case = Case.objects.filter(title='Caso solo disponibles').first()
+        self.assertIsNotNone(new_case)
+        # Debe asignarse a students[1] (el unico disponible con 0 casos)
+        self.assertEqual(new_case.student_assigned, self.students[1])
