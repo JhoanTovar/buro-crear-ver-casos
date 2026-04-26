@@ -1,0 +1,21 @@
+# v0 runtime files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+
+# Common ignores
+node_modules
+.next/
+.env*.local
+.DS_Store
+.env
+
+# Python cache files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Explicit pycache folders in this project
+buro_app/__pycache__/
+consultorio/__pycache__/
+consultorio/migrations/__pycache__/

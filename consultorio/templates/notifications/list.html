@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Notificaciones - Buro Legal{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-white">Notificaciones {% if unread_count %}<span class="text-base font-medium text-blue-600">({{ unread_count }} sin leer)</span>{% endif %}</h1>
+        <form method="post" action="{% url mark_all_url_name %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                Marcar todas como leidas
+            </button>
+        </form>
+    </div>
+
+    {% if notifications %}
+    <div class="space-y-4">
+        {% for notification in notifications %}
+        <div class="bg-white rounded-lg shadow p-4 {% if not notification.read %}border-l-4 border-blue-500{% endif %}">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h3 class="font-semibold text-gray-800 {% if not notification.read %}text-blue-600{% endif %}">
+                        {{ notification.title }}
+                    </h3>
+                    <p class="text-gray-600 mt-1">{{ notification.message }}</p>
+                    <p class="text-sm text-gray-400 mt-2">{{ notification.date|date:"d/m/Y H:i" }}</p>
+                </div>
+                {% if not notification.read %}
+                <form method="post" action="{% url mark_read_url_name notification.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <button type="submit" class="text-blue-600 hover:text-blue-800 text-sm">
+                        Marcar como leida
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="flex justify-center mt-6 space-x-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Anterior</a>
+        {% endif %}
+        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">{{ page_obj.number }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Siguiente</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="bg-white rounded-lg shadow p-8 text-center">
+        <p class="text-gray-500">No tienes notificaciones</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

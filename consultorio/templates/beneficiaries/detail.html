@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ beneficiary.name }} - Consultorio Juridico{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+            <a href="{% url 'beneficiary-list' %}" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mb-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Volver a beneficiarios
+            </a>
+            <h1 class="text-2xl font-bold text-gray-900">{{ beneficiary.name }}</h1>
+            <p class="text-gray-600">Documento: {{ beneficiary.document }}</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'appointment-create' %}?beneficiary={{ beneficiary.pk }}" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Agendar Cita
+            </a>
+            <a href="{% url 'beneficiary-edit' beneficiary.pk %}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Info Principal -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Informacion Personal</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm text-gray-500">Nombre Completo</p>
+                    <p class="font-medium text-gray-900">{{ beneficiary.name }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Documento</p>
+                    <p class="font-medium text-gray-900">{{ beneficiary.document }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Direccion</p>
+                    <p class="font-medium text-gray-900">{{ beneficiary.address }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Telefono</p>
+                    <p class="font-medium text-gray-900">{{ beneficiary.phone }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Correo Electronico</p>
+                    <p class="font-medium text-gray-900">{{ beneficiary.email }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Fecha de Registro</p>
+                    <p class="font-medium text-gray-900">{{ beneficiary.registration_date|date:"d/m/Y H:i" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Autorizacion de Datos</p>
+                    {% if beneficiary.is_authorized %}
+                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Autorizado</span>
+                    {% else %}
+                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">No Autorizado</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Acciones Rapidas -->
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Acciones Rapidas</h3>
+                <div class="space-y-2">
+                    <a href="{% url 'send-email' %}?beneficiary={{ beneficiary.pk }}" class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        Enviar correo
+                    </a>
+                    <a href="{% url 'communication-create' %}?beneficiary={{ beneficiary.pk }}" class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                        </svg>
+                        Registrar comunicacion
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Citas y Casos -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Citas -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900">Citas</h2>
+                    <a href="{% url 'appointment-create' %}?beneficiary={{ beneficiary.pk }}" class="text-sm text-blue-600 hover:text-blue-700">Nueva cita</a>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for appointment in appointments %}
+                    <a href="{% url 'appointment-detail' appointment.pk %}" class="block px-6 py-4 hover:bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">{{ appointment.date|date:"d/m/Y H:i" }}</p>
+                                <p class="text-sm text-gray-600">{{ appointment.get_type_display }} - {{ appointment.get_reason_type_display }}</p>
+                            </div>
+                            <span class="px-2.5 py-1 text-xs font-medium rounded-full 
+                                {% if appointment.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                                {% elif appointment.status == 'COMPLETED' %}bg-green-100 text-green-800
+                                {% elif appointment.status == 'CANCELLED' %}bg-red-100 text-red-800
+                                {% elif appointment.status == 'ABSENCE' %}bg-orange-100 text-orange-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ appointment.get_status_display }}
+                            </span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="px-6 py-8 text-center text-gray-500">
+                        <p>No hay citas registradas</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Casos -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900">Casos</h2>
+                    <a href="{% url 'case-create' %}?beneficiary={{ beneficiary.pk }}" class="text-sm text-blue-600 hover:text-blue-700">Nuevo caso</a>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for case in cases %}
+                    <a href="{% url 'case-detail' case.pk %}" class="block px-6 py-4 hover:bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">Caso {{ case.id|slice:":8" }}</p>
+                                <p class="text-sm text-gray-600">{{ case.description|truncatewords:10 }}</p>
+                            </div>
+                            <span class="px-2.5 py-1 text-xs font-medium rounded-full 
+                                {% if case.status == 'ASSIGNED' %}bg-blue-100 text-blue-800
+                                {% elif case.status == 'INPROCESS' %}bg-yellow-100 text-yellow-800
+                                {% elif case.status == 'COMPLETED' %}bg-green-100 text-green-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ case.get_status_display }}
+                            </span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="px-6 py-8 text-center text-gray-500">
+                        <p>No hay casos registrados</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Comunicaciones -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900">Comunicaciones</h2>
+                    <a href="{% url 'communication-create' %}?beneficiary={{ beneficiary.pk }}" class="text-sm text-blue-600 hover:text-blue-700">Registrar</a>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for comm in communications %}
+                    <div class="px-6 py-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">{{ comm.get_type_display }}</span>
+                            <span class="text-sm text-gray-500">{{ comm.date|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <p class="text-sm text-gray-600">{{ comm.description|truncatewords:20 }}</p>
+                        {% if comm.responsible %}
+                        <p class="text-xs text-gray-400 mt-1">Por: {{ comm.responsible.get_full_name|default:comm.responsible.username }}</p>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="px-6 py-8 text-center text-gray-500">
+                        <p>No hay comunicaciones registradas</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

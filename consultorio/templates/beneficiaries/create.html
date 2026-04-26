@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Beneficiario - Consultorio Juridico{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'beneficiary-list' %}" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mb-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Volver a beneficiarios
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900">Registrar Beneficiario</h1>
+        <p class="text-gray-600">Complete el formulario para registrar un nuevo beneficiario</p>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="space-y-6">
+                <!-- Nombre -->
+                <div>
+                    <label for="id_name" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Documento -->
+                <div>
+                    <label for="id_document" class="block text-sm font-medium text-gray-700 mb-1">Documento de Identidad *</label>
+                    {{ form.document }}
+                    {% if form.document.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.document.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Direccion -->
+                <div>
+                    <label for="id_address" class="block text-sm font-medium text-gray-700 mb-1">Direccion *</label>
+                    {{ form.address }}
+                    {% if form.address.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.address.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Telefono -->
+                    <div>
+                        <label for="id_phone" class="block text-sm font-medium text-gray-700 mb-1">Telefono *</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.phone.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="id_email" class="block text-sm font-medium text-gray-700 mb-1">Correo Electronico *</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <p class="text-red-600 text-sm mt-1">{{ form.email.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Autorizacion -->
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="flex items-start gap-3">
+                        {{ form.is_authorized }}
+                        <div>
+                            <label for="id_is_authorized" class="text-sm font-medium text-gray-700">Autorizacion de Tratamiento de Datos</label>
+                            <p class="text-sm text-gray-500 mt-1">El beneficiario autoriza el tratamiento de sus datos personales de acuerdo con la Ley 1581 de 2012 (Proteccion de Datos Personales de Colombia).</p>
+                        </div>
+                    </div>
+                    {% if form.is_authorized.errors %}
+                    <p class="text-red-600 text-sm mt-2">{{ form.is_authorized.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+                <a href="{% url 'beneficiary-list' %}" class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                    Registrar Beneficiario
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
