@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+
+{% block title %}Caso {{ case.id|slice:":8" }} - Consultorio Juridico{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+            <a href="{% url 'case-list' %}" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mb-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Volver a casos
+            </a>
+            <h1 class="text-2xl font-bold text-gray-900">{% if case.title %}{{ case.title }}{% else %}Caso {{ case.id|slice:":8" }}{% endif %}</h1>
+            <p class="text-gray-600">ID: {{ case.id }}</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'case-edit' case.pk %}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Editar
+            </a>
+            {% if case.status != 'CLOSED' %}
+            <button onclick="document.getElementById('closeModal').classList.remove('hidden')" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Cerrar Caso
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Info Principal -->
+        <div class="space-y-6">
+            <!-- Estado del Caso -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Estado del Caso</h2>
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="px-3 py-1.5 text-sm font-medium rounded-full 
+                        {% if case.status == 'ASSIGNED' %}bg-blue-100 text-blue-800
+                        {% elif case.status == 'IN_PROCESS' %}bg-yellow-100 text-yellow-800
+                        {% elif case.status == 'CLOSED' %}bg-green-100 text-green-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ case.get_status_display }}
+                    </span>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <p class="text-sm text-gray-500">Fecha de Creacion</p>
+                        <p class="font-medium text-gray-900">{{ case.creation_date|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    {% if case.legal_room %}
+                    <div>
+                        <p class="text-sm text-gray-500">Sala Juridica</p>
+                        <p class="font-medium text-gray-900">{{ case.legal_room.name }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Beneficiario -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Beneficiario</h2>
+                <div class="space-y-3">
+                    <div>
+                        <p class="text-sm text-gray-500">Nombre</p>
+                        <a href="{% url 'beneficiary-detail' case.beneficiary.pk %}" class="font-medium text-blue-600 hover:text-blue-700">{{ case.beneficiary.name }}</a>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Documento</p>
+                        <p class="font-medium text-gray-900">{{ case.beneficiary.document }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Telefono</p>
+                        <p class="font-medium text-gray-900">{{ case.beneficiary.phone }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Correo</p>
+                        <p class="font-medium text-gray-900">{{ case.beneficiary.email }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Titular del Caso (si es diferente) -->
+            {% if not case.titular_is_beneficiary %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Titular del Caso</h2>
+                <div class="space-y-3">
+                    <div>
+                        <p class="text-sm text-gray-500">Nombre</p>
+                        <p class="font-medium text-gray-900">{{ case.titular_nombre }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Cedula</p>
+                        <p class="font-medium text-gray-900">{{ case.titular_cedula }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Telefono</p>
+                        <p class="font-medium text-gray-900">{{ case.titular_telefono }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Correo</p>
+                        <p class="font-medium text-gray-900">{{ case.titular_correo }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Datos Demograficos -->
+            {% if case.sexo or case.poblacion or case.etnia or case.estrato or case.discapacidad %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Datos Demograficos</h2>
+                <div class="space-y-3">
+                    {% if case.sexo %}
+                    <div>
+                        <p class="text-sm text-gray-500">Sexo</p>
+                        <p class="font-medium text-gray-900">{{ case.get_sexo_display }}</p>
+                    </div>
+                    {% endif %}
+                    {% if case.poblacion %}
+                    <div>
+                        <p class="text-sm text-gray-500">Poblacion</p>
+                        <p class="font-medium text-gray-900">{{ case.get_poblacion_display }}</p>
+                    </div>
+                    {% endif %}
+                    {% if case.etnia %}
+                    <div>
+                        <p class="text-sm text-gray-500">Etnia</p>
+                        <p class="font-medium text-gray-900">{{ case.get_etnia_display }}</p>
+                    </div>
+                    {% endif %}
+                    {% if case.estrato %}
+                    <div>
+                        <p class="text-sm text-gray-500">Estrato</p>
+                        <p class="font-medium text-gray-900">{{ case.get_estrato_display }}</p>
+                    </div>
+                    {% endif %}
+                    {% if case.discapacidad %}
+                    <div>
+                        <p class="text-sm text-gray-500">Discapacidad</p>
+                        <p class="font-medium text-gray-900">{{ case.get_discapacidad_display }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Estudiante Asignado -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Estudiante Asignado</h2>
+                    {% if case.status != 'CLOSED' %}
+                    <button onclick="document.getElementById('reassignModal').classList.remove('hidden')" class="text-sm text-blue-600 hover:text-blue-700">Reasignar</button>
+                    {% endif %}
+                </div>
+                {% if case.student_assigned %}
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span class="text-blue-600 font-semibold">{{ case.student_assigned.user.first_name|slice:":1" }}{{ case.student_assigned.user.last_name|slice:":1" }}</span>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">{{ case.student_assigned.user.get_full_name }}</p>
+                        <p class="text-sm text-gray-500">{{ case.student_assigned.enrollment_professional }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-gray-500">Sin estudiante asignado</p>
+                {% endif %}
+
+                {% if case.reason_for_reassignment %}
+                <div class="mt-4 p-3 bg-yellow-50 rounded-lg">
+                    <p class="text-sm text-yellow-800"><strong>Razon de reasignacion:</strong> {{ case.reason_for_reassignment }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Descripcion -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Descripcion del Caso</h2>
+                <p class="text-gray-700 whitespace-pre-wrap">{{ case.description }}</p>
+            </div>
+
+            <!-- Cita de Origen -->
+            {% if case.appointment_origin %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Cita de Origen</h2>
+                <a href="{% url 'appointment-detail' case.appointment_origin.pk %}" class="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-medium text-gray-900">{{ case.appointment_origin.date|date:"d/m/Y H:i" }}</p>
+                            <p class="text-sm text-gray-600">{{ case.appointment_origin.get_type_display }} - {{ case.appointment_origin.get_reason_type_display }}</p>
+                        </div>
+                        <span class="px-2.5 py-1 text-xs font-medium rounded-full 
+                            {% if case.appointment_origin.status == 'COMPLETED' %}bg-green-100 text-green-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ case.appointment_origin.get_status_display }}
+                        </span>
+                    </div>
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Historial -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900">Historial del Caso</h2>
+                    {% if case.status != 'CLOSED' %}
+                    <button onclick="document.getElementById('historyModal').classList.remove('hidden')" class="text-sm text-blue-600 hover:text-blue-700">Agregar entrada</button>
+                    {% endif %}
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for entry in history %}
+                    <div class="px-6 py-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium text-gray-900">{{ entry.action }}</span>
+                            <span class="text-sm text-gray-500">{{ entry.date|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        {% if entry.observation %}
+                        <p class="text-sm text-gray-600">{{ entry.observation }}</p>
+                        {% endif %}
+                        {% if entry.responsible %}
+                        <p class="text-xs text-gray-400 mt-1">Por: {{ entry.responsible.user.get_full_name }}</p>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="px-6 py-8 text-center text-gray-500">
+                        <p>No hay entradas en el historial</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Citas Relacionadas -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Citas Relacionadas</h2>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for appointment in appointments %}
+                    <a href="{% url 'appointment-detail' appointment.pk %}" class="block px-6 py-4 hover:bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">{{ appointment.date|date:"d/m/Y H:i" }}</p>
+                                <p class="text-sm text-gray-600">{{ appointment.get_type_display }}</p>
+                            </div>
+                            <span class="px-2.5 py-1 text-xs font-medium rounded-full 
+                                {% if appointment.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                                {% elif appointment.status == 'COMPLETED' %}bg-green-100 text-green-800
+                                {% elif appointment.status == 'CANCELLED' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ appointment.get_status_display }}
+                            </span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="px-6 py-8 text-center text-gray-500">
+                        <p>No hay citas relacionadas</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Comunicaciones -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900">Comunicaciones</h2>
+                    <a href="{% url 'communication-create' %}?case={{ case.pk }}" class="text-sm text-blue-600 hover:text-blue-700">Registrar</a>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for comm in communications %}
+                    <div class="px-6 py-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">{{ comm.get_type_display }}</span>
+                            <span class="text-sm text-gray-500">{{ comm.date|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <p class="text-sm text-gray-600">{{ comm.description }}</p>
+                    </div>
+                    {% empty %}
+                    <div class="px-6 py-8 text-center text-gray-500">
+                        <p>No hay comunicaciones registradas</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Historial -->
+<div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Agregar Entrada al Historial</h3>
+            <button onclick="document.getElementById('historyModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <form method="post" action="{% url 'case-add-history' case.pk %}" class="p-6">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Accion</label>
+                    <input type="text" name="action" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej: Reunion con cliente">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Observacion</label>
+                    <textarea name="observation" rows="3" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Detalles adicionales..."></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex gap-3 justify-end">
+                <button type="button" onclick="document.getElementById('historyModal').classList.add('hidden')" class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancelar</button>
+                <button type="submit" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Reasignar -->
+<div id="reassignModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Reasignar Caso</h3>
+            <button onclick="document.getElementById('reassignModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <form method="post" action="{% url 'case-reassign' case.pk %}" class="p-6">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nuevo Estudiante</label>
+                    {{ reassign_form.student }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Razon de Reasignacion</label>
+                    <textarea name="reason" rows="3" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Motivo de la reasignacion..."></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex gap-3 justify-end">
+                <button type="button" onclick="document.getElementById('reassignModal').classList.add('hidden')" class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancelar</button>
+                <button type="submit" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Reasignar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Cerrar Caso -->
+<div id="closeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Cerrar Caso</h3>
+            <button onclick="document.getElementById('closeModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <form method="post" action="{% url 'case-close' case.pk %}" class="p-6">
+            {% csrf_token %}
+            <p class="text-gray-600 mb-4">Esta accion cerrara el caso definitivamente. Por favor agregue una observacion final.</p>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Observacion de Cierre</label>
+                <textarea name="observation" rows="3" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Motivo del cierre..."></textarea>
+            </div>
+            <div class="mt-6 flex gap-3 justify-end">
+                <button type="button" onclick="document.getElementById('closeModal').classList.add('hidden')" class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancelar</button>
+                <button type="submit" class="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700">Cerrar Caso</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

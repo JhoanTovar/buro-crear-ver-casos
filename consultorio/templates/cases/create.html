@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear Caso - Consultorio Juridico{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'case-list' %}" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mb-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Volver a casos
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900">Crear Nuevo Caso</h1>
+        <p class="text-gray-600">Complete el formulario para crear un nuevo caso</p>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="space-y-6">
+                <!-- Beneficiario -->
+                <div>
+                    <label for="id_beneficiary" class="block text-sm font-medium text-gray-700 mb-1">Beneficiario *</label>
+                    {{ form.beneficiary }}
+                    {% if form.beneficiary.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.beneficiary.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Estudiante Asignado -->
+                <div>
+                    <label for="id_student_assigned" class="block text-sm font-medium text-gray-700 mb-1">Estudiante Asignado</label>
+                    {{ form.student_assigned }}
+                    <p class="text-sm text-gray-500 mt-1">Opcional. Si no selecciona uno, se asignara automaticamente.</p>
+                    {% if form.student_assigned.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.student_assigned.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Sala Juridica -->
+                <div>
+                    <label for="id_legal_room" class="block text-sm font-medium text-gray-700 mb-1">Sala Juridica</label>
+                    {{ form.legal_room }}
+                    {% if form.legal_room.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.legal_room.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Descripcion -->
+                <div>
+                    <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">Descripcion del Caso *</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+                <a href="{% url 'case-list' %}" class="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                    Crear Caso
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

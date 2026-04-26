@@ -1853,3 +1853,387 @@ class AutoAssignStudentLogicTest(TestCase):
         self.assertIsNotNone(new_case)
         # Debe asignarse a students[1] (el unico disponible con 0 casos)
         self.assertEqual(new_case.student_assigned, self.students[1])
+
+
+# ===================== CASE LIST AND DETAIL VIEWS TESTS =====================
+
+from consultorio.models import LegalRoom
+
+
+class CaseListViewTest(TestCase):
+    """Pruebas unitarias para la vista de listado de casos"""
+
+    def setUp(self):
+        # Crear usuario admin/secretario
+        self.admin_user = SystemUser.objects.create_user(
+            username='admin_cases',
+            email='admin_cases@test.com',
+            password='Admin1234!',
+            first_name='Admin',
+            last_name='Casos',
+            role=SystemRole.SECRETARY,
+            is_active=True
+        )
+
+        # Crear estudiante
+        self.student_user = SystemUser.objects.create_user(
+            username='student_cases',
+            email='student_cases@test.com',
+            password='Test1234!',
+            first_name='Estudiante',
+            last_name='Casos',
+            role=SystemRole.STUDENT,
+            is_active=True
+        )
+        self.student = Student.objects.create(
+            user=self.student_user,
+            enrollment_professional='STU_CASES',
+            available=True
+        )
+
+        # Crear beneficiario
+        self.beneficiary = Beneficiary.objects.create(
+            name='Beneficiario Casos',
+            document='1111222233',
+            address='Calle Test 456',
+            phone='3007654321',
+            email='beneficiario_casos@test.com',
+            is_authorized=True
+        )
+
+        # Crear sala juridica
+        self.legal_room = LegalRoom.objects.create(
+            name='Sala Civil',
+            description='Sala de asuntos civiles'
+        )
+
+        # Crear casos de prueba
+        self.case1 = Case.objects.create(
+            title='Caso Civil 1',
+            beneficiary=self.beneficiary,
+            student_assigned=self.student,
+            legal_room=self.legal_room,
+            description='Descripcion del caso civil 1',
+            status=CaseStatus.IN_PROCESS
+        )
+        self.case2 = Case.objects.create(
+            title='Caso Laboral',
+            beneficiary=self.beneficiary,
+            student_assigned=self.student,
+            description='Descripcion del caso laboral',
+            status=CaseStatus.ASSIGNED
+        )
+        self.case3 = Case.objects.create(
+            title='Caso Cerrado',
+            beneficiary=self.beneficiary,
+            student_assigned=self.student,
+            description='Descripcion del caso cerrado',
+            status=CaseStatus.CLOSED
+        )
+
+    def test_case_list_requires_login(self):
+        """La vista de listado de casos debe requerir autenticacion"""
+        response = self.client.get(reverse('case-list'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+
+    def test_case_list_loads_successfully(self):
+        """La vista debe cargar correctamente con los casos"""
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse('case-list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('cases', response.context)
+        self.assertEqual(len(response.context['cases']), 3)
+
+    def test_case_list_filter_by_status(self):
+        """Debe filtrar casos por estado"""
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse('case-list'), {'status': CaseStatus.IN_PROCESS})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['cases']), 1)
+        self.assertEqual(response.context['cases'][0], self.case1)
+
+    def test_case_list_filter_by_legal_room(self):
+        """Debe filtrar casos por sala juridica"""
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse('case-list'), {'legal_room': self.legal_room.pk})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['cases']), 1)
+        self.assertEqual(response.context['cases'][0], self.case1)
+
+    def test_case_list_shows_statuses_in_context(self):
+        """El contexto debe incluir los estados disponibles"""
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse('case-list'))
+        self.assertIn('statuses', response.context)
+
+    def test_case_list_shows_legal_rooms_in_context(self):
+        """El contexto debe incluir las salas juridicas"""
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse('case-list'))
+        self.assertIn('legal_rooms', response.context)
+
+
+class CaseDetailViewTest(TestCase):
+    """Pruebas unitarias para la vista de detalle de caso"""
+
+    def setUp(self):
+        # Crear usuario
+        self.user = SystemUser.objects.create_user(
+            username='user_detail',
+            email='user_detail@test.com',
+            password='Test1234!',
+            first_name='Usuario',
+            last_name='Detalle',
+            role=SystemRole.SECRETARY,
+            is_active=True
+        )
+
+        # Crear estudiante
+        self.student_user = SystemUser.objects.create_user(
+            username='student_detail',
+            email='student_detail@test.com',
+            password='Test1234!',
+            first_name='Estudiante',
+            last_name='Detalle',
+            role=SystemRole.STUDENT,
+            is_active=True
+        )
+        self.student = Student.objects.create(
+            user=self.student_user,
+            enrollment_professional='STU_DETAIL',
+            available=True
+        )
+
+        # Crear beneficiario
+        self.beneficiary = Beneficiary.objects.create(
+            name='Beneficiario Detalle',
+            document='9998887776',
+            address='Direccion Detalle',
+            phone='3001112222',
+            email='beneficiario_detalle@test.com',
+            is_authorized=True
+        )
+
+        # Crear caso con datos completos
+        self.case = Case.objects.create(
+            title='Caso de Prueba Detalle',
+            beneficiary=self.beneficiary,
+            student_assigned=self.student,
+            description='Descripcion completa del caso de prueba',
+            status=CaseStatus.IN_PROCESS,
+            sexo='MASCULINO',
+            poblacion='DESPLAZADO',
+            etnia='INDIGENA',
+            estrato='1',
+            discapacidad='NINGUNA',
+            titular_is_beneficiary=True
+        )
+
+        # Crear historial
+        CaseHistory.objects.create(
+            case=self.case,
+            action='Caso creado',
+            observation='Creacion inicial del caso',
+            responsible=self.student
+        )
+
+    def test_case_detail_requires_login(self):
+        """La vista de detalle debe requerir autenticacion"""
+        response = self.client.get(reverse('case-detail', args=[self.case.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+
+    def test_case_detail_loads_successfully(self):
+        """La vista debe cargar correctamente con el caso"""
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('case-detail', args=[self.case.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['case'], self.case)
+
+    def test_case_detail_shows_history(self):
+        """El contexto debe incluir el historial del caso"""
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('case-detail', args=[self.case.pk]))
+        self.assertIn('history', response.context)
+        self.assertEqual(len(response.context['history']), 1)
+
+    def test_case_detail_shows_beneficiary_info(self):
+        """La vista debe mostrar informacion del beneficiario"""
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('case-detail', args=[self.case.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.beneficiary.name)
+        self.assertContains(response, self.beneficiary.document)
+
+    def test_case_detail_shows_student_assigned(self):
+        """La vista debe mostrar el estudiante asignado"""
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('case-detail', args=[self.case.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.student.user.first_name)
+
+    def test_case_detail_shows_demographic_data(self):
+        """La vista debe mostrar los datos demograficos"""
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('case-detail', args=[self.case.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Masculino')
+        self.assertContains(response, 'Desplazado')
+        self.assertContains(response, 'Indigena')
+
+    def test_case_detail_404_for_nonexistent(self):
+        """Debe retornar 404 para un caso que no existe"""
+        self.client.force_login(self.user)
+        import uuid
+        fake_uuid = uuid.uuid4()
+        response = self.client.get(reverse('case-detail', args=[fake_uuid]))
+        self.assertEqual(response.status_code, 404)
+
+
+class CaseDetailWithDifferentTitularTest(TestCase):
+    """Pruebas para casos con titular diferente al beneficiario"""
+
+    def setUp(self):
+        self.user = SystemUser.objects.create_user(
+            username='user_titular',
+            email='user_titular@test.com',
+            password='Test1234!',
+            role=SystemRole.SECRETARY,
+            is_active=True
+        )
+
+        self.student_user = SystemUser.objects.create_user(
+            username='student_titular',
+            email='student_titular@test.com',
+            password='Test1234!',
+            role=SystemRole.STUDENT,
+            is_active=True
+        )
+        self.student = Student.objects.create(
+            user=self.student_user,
+            enrollment_professional='STU_TIT',
+            available=True
+        )
+
+        self.beneficiary = Beneficiary.objects.create(
+            name='Beneficiario Original',
+            document='5554443332',
+            address='Direccion Original',
+            phone='3004445555',
+            email='beneficiario_original@test.com',
+            is_authorized=True
+        )
+
+        # Caso con titular diferente
+        self.case_different_titular = Case.objects.create(
+            title='Caso con Titular Diferente',
+            beneficiary=self.beneficiary,
+            student_assigned=self.student,
+            description='Caso donde el titular es diferente al beneficiario',
+            status=CaseStatus.IN_PROCESS,
+            titular_is_beneficiary=False,
+            titular_cedula='1234567890',
+            titular_nombre='Maria Titular Diferente',
+            titular_telefono='3009998888',
+            titular_correo='titular@test.com',
+            sexo='FEMENINO',
+            poblacion='VICTIMA',
+            etnia='AFRODESCENDIENTE',
+            estrato='2',
+            discapacidad='FISICA'
+        )
+
+    def test_shows_titular_section_when_different(self):
+        """Debe mostrar la seccion del titular cuando es diferente al beneficiario"""
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('case-detail', args=[self.case_different_titular.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Titular del Caso')
+        self.assertContains(response, 'Maria Titular Diferente')
+        self.assertContains(response, '1234567890')
+        self.assertContains(response, 'titular@test.com')
+
+    def test_hides_titular_section_when_same(self):
+        """No debe mostrar la seccion del titular cuando es el mismo beneficiario"""
+        # Crear caso donde titular es el beneficiario
+        case_same_titular = Case.objects.create(
+            title='Caso con Mismo Titular',
+            beneficiary=self.beneficiary,
+            student_assigned=self.student,
+            description='Caso donde el titular es el mismo beneficiario',
+            status=CaseStatus.IN_PROCESS,
+            titular_is_beneficiary=True,
+            sexo='MASCULINO',
+            poblacion='NINGUNA',
+            etnia='NINGUNA',
+            estrato='3',
+            discapacidad='NINGUNA'
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('case-detail', args=[case_same_titular.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Titular del Caso')
+
+
+class BeneficiaryDetailCaseLinkTest(TestCase):
+    """Pruebas para verificar que los casos en la vista de beneficiario son clickeables"""
+
+    def setUp(self):
+        self.user = SystemUser.objects.create_user(
+            username='user_beneficiary_link',
+            email='user_link@test.com',
+            password='Test1234!',
+            role=SystemRole.SECRETARY,
+            is_active=True
+        )
+
+        self.student_user = SystemUser.objects.create_user(
+            username='student_link',
+            email='student_link@test.com',
+            password='Test1234!',
+            role=SystemRole.STUDENT,
+            is_active=True
+        )
+        self.student = Student.objects.create(
+            user=self.student_user,
+            enrollment_professional='STU_LINK',
+            available=True
+        )
+
+        self.beneficiary = Beneficiary.objects.create(
+            name='Beneficiario Con Casos',
+            document='7778889990',
+            address='Direccion Con Casos',
+            phone='3007778888',
+            email='con_casos@test.com',
+            is_authorized=True
+        )
+
+        self.case = Case.objects.create(
+            title='Caso Enlazado',
+            beneficiary=self.beneficiary,
+            student_assigned=self.student,
+            description='Este caso debe ser clickeable desde la vista del beneficiario',
+            status=CaseStatus.IN_PROCESS
+        )
+
+    def test_beneficiary_detail_shows_case_link(self):
+        """La vista de detalle del beneficiario debe mostrar enlaces a los casos"""
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('beneficiary-detail', args=[self.beneficiary.pk]))
+        self.assertEqual(response.status_code, 200)
+        
+        # Verificar que el enlace al caso esta presente
+        case_detail_url = reverse('case-detail', args=[self.case.pk])
+        self.assertContains(response, case_detail_url)
+
+    def test_case_link_redirects_to_case_detail(self):
+        """El enlace del caso debe llevar a la vista de detalle del caso"""
+        self.client.force_login(self.user)
+        
+        # Navegar desde beneficiario a caso
+        response = self.client.get(reverse('case-detail', args=[self.case.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['case'], self.case)
