@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
     SystemUser, Student, Beneficiary, Appointment, Communication, 
-    Notification,
+    Notification, Case, CaseHistory, LegalRoom,
 )
 
 
